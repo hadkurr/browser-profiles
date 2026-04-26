@@ -5,7 +5,7 @@ import {
   Inter_700Bold,
   useFonts,
 } from "@expo-google-fonts/inter";
-import { Stack } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { StatusBar } from "expo-status-bar";
@@ -15,9 +15,31 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ProfileProvider } from "@/context/ProfileContext";
+import { AuthProvider, useAuth } from "@/context/AuthContext";
 import C from "@/constants/colors";
 
 SplashScreen.preventAutoHideAsync();
+
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const { user, isLoading } = useAuth();
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    if (isLoading) return;
+    const inAuthGroup = segments[0] === "auth";
+
+    if (!user) {
+      if (!inAuthGroup) router.replace("/auth/login");
+    } else if (!user.isActive && !user.isAdmin) {
+      if (segments.join("/") !== "auth/activate") router.replace("/auth/activate");
+    } else {
+      if (inAuthGroup) router.replace("/(tabs)");
+    }
+  }, [user, isLoading, segments]);
+
+  return <>{children}</>;
+}
 
 function RootLayoutNav() {
   return (
@@ -31,6 +53,7 @@ function RootLayoutNav() {
       }}
     >
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="auth" options={{ headerShown: false }} />
       <Stack.Screen
         name="profile/[id]"
         options={{
@@ -81,12 +104,16 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: C.bg }}>
       <SafeAreaProvider>
         <ErrorBoundary>
-          <ProfileProvider>
-            <KeyboardProvider>
-              <StatusBar style="light" backgroundColor={C.bg} />
-              <RootLayoutNav />
-            </KeyboardProvider>
-          </ProfileProvider>
+          <AuthProvider>
+            <ProfileProvider>
+              <KeyboardProvider>
+                <StatusBar style="light" backgroundColor={C.bg} />
+                <AuthGate>
+                  <RootLayoutNav />
+                </AuthGate>
+              </KeyboardProvider>
+            </ProfileProvider>
+          </AuthProvider>
         </ErrorBoundary>
       </SafeAreaProvider>
     </GestureHandlerRootView>
