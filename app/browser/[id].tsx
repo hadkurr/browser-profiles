@@ -21,6 +21,11 @@ import C from "@/constants/colors";
 import { useProfiles } from "@/context/ProfileContext";
 import { buildFingerprintJS } from "@/hooks/useFingerprintJS";
 import { useProfileSession } from "@/hooks/useProfileSession";
+import {
+  isCookieIsolationAvailable,
+  restoreProfileCookies,
+  saveProfileCookies,
+} from "@/utils/cookieManager";
 
 const PENDING_SCRIPT_KEY = "@bpm_pending_script";
 
@@ -46,7 +51,9 @@ export default function BrowserScreen() {
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [showUrlBar, setShowUrlBar] = useState(false);
   const [scriptInjected, setScriptInjected] = useState(false);
+  const [cookiesRestored, setCookiesRestored] = useState(!isCookieIsolationAvailable());
   const pendingScriptRef = useRef<string | null>(null);
+  const currentUrlRef = useRef(HOME_URL);
 
   useEffect(() => {
     if (autoScript === "1") {
@@ -61,6 +68,14 @@ export default function BrowserScreen() {
       });
     }
   }, [autoScript, id]);
+
+  useEffect(() => {
+    if (!id || !isCookieIsolationAvailable()) return;
+    restoreProfileCookies(id).finally(() => setCookiesRestored(true));
+    return () => {
+      saveProfileCookies(id, currentUrlRef.current).catch(() => {});
+    };
+  }, [id]);
 
   function normalize(raw: string): string {
     const s = raw.trim();
@@ -82,6 +97,7 @@ export default function BrowserScreen() {
       const url = navState.url;
       if (!url || url === "about:blank") return;
       setCurrentUrl(url);
+      currentUrlRef.current = url;
       setUrlInput(url);
       setCanGoBack(navState.canGoBack ?? false);
       setCanGoForward(navState.canGoForward ?? false);
@@ -90,6 +106,9 @@ export default function BrowserScreen() {
       setIsBookmarked(bookmarked);
       if (!profile?.isPrivate) {
         addHistoryEntry(id!, url, navState.title ?? url);
+      }
+      if (id && isCookieIsolationAvailable()) {
+        saveProfileCookies(id, url).catch(() => {});
       }
     },
     [profile, id, addHistoryEntry]
@@ -124,11 +143,13 @@ export default function BrowserScreen() {
     );
   }
 
-  if (!session.ready) {
+  if (!session.ready || !cookiesRestored) {
     return (
       <View style={[s.center, { backgroundColor: C.bg }]}>
         <ActivityIndicator color={C.primary} size="large" />
-        <Text style={[s.errorText, { marginTop: 12 }]}>Đang tải phiên...</Text>
+        <Text style={[s.errorText, { marginTop: 12 }]}>
+          {!cookiesRestored ? "Đang tải profile cookie..." : "Đang tải phiên..."}
+        </Text>
       </View>
     );
   }
