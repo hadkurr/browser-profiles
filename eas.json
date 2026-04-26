@@ -8,6 +8,10 @@
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleRelease"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE": "https://bdc6126a-17d2-41b4-8100-c7f6cfadcd7a-00-2atgmnii1colv.riker.replit.dev",
+        "EXPO_PUBLIC_DOMAIN": "bdc6126a-17d2-41b4-8100-c7f6cfadcd7a-00-2atgmnii1colv.riker.replit.dev"
       }
     },
     "development": {
@@ -15,6 +19,10 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_BASE": "https://bdc6126a-17d2-41b4-8100-c7f6cfadcd7a-00-2atgmnii1colv.riker.replit.dev",
+        "EXPO_PUBLIC_DOMAIN": "bdc6126a-17d2-41b4-8100-c7f6cfadcd7a-00-2atgmnii1colv.riker.replit.dev"
       }
     }
   }
