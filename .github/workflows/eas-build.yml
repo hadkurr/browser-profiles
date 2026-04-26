@@ -18,11 +18,6 @@ jobs:
         with:
           node-version: 20.x
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 9
-
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
@@ -30,7 +25,9 @@ jobs:
           token: ${{ secrets.EXPO_TOKEN }}
 
       - name: Install deps
-        run: pnpm install --no-frozen-lockfile
+        run: npm install
 
       - name: Build APK
+        env:
+          EXPO_PUBLIC_DOMAIN: bdc6126a-17d2-41b4-8100-c7f6cfadcd7a-00-2atgmnii1colv.riker.replit.dev
         run: eas build -p android --profile preview --non-interactive
