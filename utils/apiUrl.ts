@@ -1,15 +1,7 @@
+const apiBase = process.env.EXPO_PUBLIC_API_BASE ?? "";
 const domain = process.env.EXPO_PUBLIC_DOMAIN ?? "";
 
-function buildApiBase(): string {
-  if (domain) {
-    const parts = domain.split(".");
-    parts[0] = parts[0] + "-8080";
-    return "https://" + parts.join(".");
-  }
-  return "http://localhost:8080";
-}
-
-export const API_BASE = buildApiBase();
+export const API_BASE = apiBase || (domain ? `https://${domain}` : "http://localhost:8080");
 
 export async function runPythonScript(
   code: string,
