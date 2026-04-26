@@ -3,8 +3,11 @@ import { Tabs } from "expo-router";
 import React from "react";
 
 import C from "@/constants/colors";
+import { useAuth } from "@/context/AuthContext";
 
 export default function TabLayout() {
+  const { user } = useAuth();
+
   return (
     <Tabs
       screenOptions={{
@@ -68,6 +71,16 @@ export default function TabLayout() {
           tabBarIcon: ({ color, size }) => (
             <Feather name="settings" size={size ?? 22} color={color} />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="admin"
+        options={{
+          title: "Admin",
+          tabBarIcon: ({ color, size }) => (
+            <Feather name="shield" size={size ?? 22} color={color} />
+          ),
+          tabBarItemStyle: user?.isAdmin ? {} : { display: "none" },
         }}
       />
     </Tabs>
