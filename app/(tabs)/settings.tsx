@@ -14,15 +14,18 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { useAuth } from "@/context/AuthContext";
 import { useProfiles } from "@/context/ProfileContext";
+import { useSettings } from "@/context/SettingsContext";
 import C from "@/constants/colors";
 
-function Row({ icon, label, sub, right, onPress }: {
+function Row({ icon, label, sub, right, onPress, danger }: {
   icon: string;
   label: string;
   sub?: string;
   right?: React.ReactNode;
   onPress?: () => void;
+  danger?: boolean;
 }) {
   return (
     <Pressable
@@ -30,14 +33,14 @@ function Row({ icon, label, sub, right, onPress }: {
       onPress={onPress}
       disabled={!onPress}
     >
-      <View style={s.rowIcon}>
-        <Feather name={icon as any} size={16} color={C.primary} />
+      <View style={[s.rowIcon, danger && { backgroundColor: "#3a1a1a" }]}>
+        <Feather name={icon as any} size={16} color={danger ? "#f87171" : C.primary} />
       </View>
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={s.rowLabel}>{label}</Text>
+        <Text style={[s.rowLabel, danger && { color: "#f87171" }]}>{label}</Text>
         {sub && <Text style={s.rowSub}>{sub}</Text>}
       </View>
-      {right ?? (onPress ? <Feather name="chevron-right" size={16} color={C.textMuted} /> : null)}
+      {right ?? (onPress ? <Feather name="chevron-right" size={16} color={danger ? "#f87171" : C.textMuted} /> : null)}
     </Pressable>
   );
 }
@@ -45,7 +48,8 @@ function Row({ icon, label, sub, right, onPress }: {
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { profiles, clearProfileData } = useProfiles();
-  const [confirmClear, setConfirmClear] = useState(false);
+  const { user, logout } = useAuth();
+  const { settings, setSetting } = useSettings();
 
   async function handleClearAll() {
     Alert.alert(
@@ -89,6 +93,25 @@ export default function SettingsScreen() {
     );
   }
 
+  function handleLogout() {
+    Alert.alert(
+      "Đăng xuất",
+      `Bạn có chắc muốn đăng xuất khỏi tài khoản "${user?.username}"?`,
+      [
+        { text: "Hủy", style: "cancel" },
+        {
+          text: "Đăng xuất",
+          style: "destructive",
+          onPress: async () => {
+            if (Platform.OS !== "web")
+              await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+            await logout();
+          },
+        },
+      ]
+    );
+  }
+
   const totalStorage = profiles.reduce(
     (s, p) => s + p.historyEntries.length + p.bookmarks.length,
     0
@@ -101,6 +124,22 @@ export default function SettingsScreen() {
       showsVerticalScrollIndicator={false}
     >
       <Text style={s.title}>Cài đặt</Text>
+
+      {user && (
+        <View style={s.accountCard}>
+          <View style={s.accountAvatar}>
+            <Feather name={user.isAdmin ? "shield" : "user"} size={20} color={C.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.accountName}>{user.username}</Text>
+            <Text style={s.accountRole}>{user.isAdmin ? "Quản trị viên" : "Người dùng"}</Text>
+          </View>
+          <Pressable style={s.logoutBtn} onPress={handleLogout}>
+            <Feather name="log-out" size={15} color="#f87171" />
+            <Text style={s.logoutBtnText}>Đăng xuất</Text>
+          </Pressable>
+        </View>
+      )}
 
       <View style={s.section}>
         <Text style={s.sectionTitle}>Tổng quan</Text>
@@ -119,9 +158,12 @@ export default function SettingsScreen() {
             label="Fingerprint riêng cho mỗi profile"
             sub="UserAgent, Platform, WebGL, Canvas noise"
             right={
-              <View style={[s.badge, { backgroundColor: C.successDim }]}>
-                <Text style={[s.badgeText, { color: C.success }]}>Bật</Text>
-              </View>
+              <Switch
+                value={settings.fingerprintEnabled}
+                onValueChange={(v) => setSetting("fingerprintEnabled", v)}
+                trackColor={{ false: C.border, true: C.primary + "60" }}
+                thumbColor={settings.fingerprintEnabled ? C.primary : C.textMuted}
+              />
             }
           />
           <View style={s.divider} />
@@ -130,12 +172,20 @@ export default function SettingsScreen() {
             label="Cô lập localStorage / sessionStorage"
             sub="Dữ liệu mỗi profile được lưu riêng"
             right={
-              <View style={[s.badge, { backgroundColor: C.successDim }]}>
-                <Text style={[s.badgeText, { color: C.success }]}>Bật</Text>
-              </View>
+              <Switch
+                value={settings.storageIsolationEnabled}
+                onValueChange={(v) => setSetting("storageIsolationEnabled", v)}
+                trackColor={{ false: C.border, true: C.primary + "60" }}
+                thumbColor={settings.storageIsolationEnabled ? C.primary : C.textMuted}
+              />
             }
           />
         </View>
+        <Text style={s.settingNote}>
+          {settings.fingerprintEnabled
+            ? "Mỗi profile dùng UserAgent và fingerprint riêng biệt để tránh bị tracking."
+            : "Tắt fingerprint: tất cả profile dùng UserAgent mặc định của thiết bị."}
+        </Text>
       </View>
 
       <View style={s.section}>
@@ -172,11 +222,16 @@ export default function SettingsScreen() {
         </View>
       </View>
 
-      <View style={[s.footerNote, { marginTop: 8 }]}>
-        <Feather name="lock" size={12} color={C.textMuted} />
-        <Text style={s.footerText}>
-          Dữ liệu được lưu cục bộ · Không có cloud sync · Không cần đăng nhập
-        </Text>
+      <View style={s.section}>
+        <View style={s.card}>
+          <Row
+            icon="log-out"
+            label="Đăng xuất"
+            sub={user ? `Đăng xuất khỏi tài khoản ${user.username}` : ""}
+            onPress={handleLogout}
+            danger
+          />
+        </View>
       </View>
     </ScrollView>
   );
@@ -187,8 +242,27 @@ const s = StyleSheet.create({
   content: { paddingHorizontal: 16, gap: 20 },
   title: { fontFamily: "Inter_700Bold", fontSize: 24, color: C.textBright },
 
-  section: { gap: 10 },
-  sectionTitle: { fontFamily: "Inter_600SemiBold", fontSize: 14, color: C.textMuted, paddingLeft: 2 },
+  accountCard: {
+    flexDirection: "row", alignItems: "center", gap: 12,
+    backgroundColor: C.bgCard, borderRadius: C.radiusLg,
+    borderWidth: 1, borderColor: C.border, padding: 14,
+  },
+  accountAvatar: {
+    width: 40, height: 40, borderRadius: 12,
+    backgroundColor: C.primaryDim, alignItems: "center", justifyContent: "center",
+  },
+  accountName: { fontFamily: "Inter_600SemiBold", fontSize: 15, color: C.textBright },
+  accountRole: { fontFamily: "Inter_400Regular", fontSize: 12, color: C.textMuted, marginTop: 2 },
+  logoutBtn: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    backgroundColor: "#3a1a1a", borderRadius: 10,
+    paddingHorizontal: 10, paddingVertical: 7,
+  },
+  logoutBtnText: { fontFamily: "Inter_500Medium", fontSize: 12, color: "#f87171" },
+
+  section: { gap: 8 },
+  sectionTitle: { fontFamily: "Inter_600SemiBold", fontSize: 13, color: C.textMuted, paddingLeft: 2 },
+  settingNote: { fontFamily: "Inter_400Regular", fontSize: 11, color: C.textMuted, paddingHorizontal: 4, lineHeight: 16 },
 
   card: { backgroundColor: C.bgCard, borderRadius: C.radiusLg, borderWidth: 1, borderColor: C.border, overflow: "hidden" },
   row: { flexDirection: "row", alignItems: "center", padding: 14, gap: 12 },
@@ -198,8 +272,6 @@ const s = StyleSheet.create({
   divider: { height: 1, backgroundColor: C.border, marginLeft: 58 },
 
   valueText: { fontFamily: "Inter_400Regular", fontSize: 13, color: C.textDim },
-  badge: { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  badgeText: { fontFamily: "Inter_500Medium", fontSize: 11 },
 
   footerNote: { flexDirection: "row", alignItems: "center", gap: 6, justifyContent: "center" },
   footerText: { fontFamily: "Inter_400Regular", fontSize: 11, color: C.textMuted, flex: 1 },
