@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CompatWebView, { WebViewRef } from "@/components/CompatWebView";
 import C from "@/constants/colors";
 import { useProfiles } from "@/context/ProfileContext";
+import { useSettings } from "@/context/SettingsContext";
 import { buildFingerprintJS } from "@/hooks/useFingerprintJS";
 import { useProfileSession } from "@/hooks/useProfileSession";
 import { BrowserProfile } from "@/types";
@@ -48,6 +49,7 @@ interface TileProps {
 function BrowserTile({ profile, isMaster, mirrorEnabled, onMasterMessage, sharedUrl, columns, pendingScript, onRegisterRef }: TileProps) {
   const { addHistoryEntry } = useProfiles();
   const session = useProfileSession(profile.id);
+  const { settings } = useSettings();
   const ref = useRef<WebViewRef>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [title, setTitle] = useState("");
@@ -80,8 +82,8 @@ function BrowserTile({ profile, isMaster, mirrorEnabled, onMasterMessage, shared
   ` : "";
 
   const injected = [
-    session.buildInjectJS(),
-    buildFingerprintJS(profile.fingerprint),
+    settings.storageIsolationEnabled ? session.buildInjectJS() : "",
+    settings.fingerprintEnabled ? buildFingerprintJS(profile.fingerprint) : "",
     SELECTOR_INJECT,
   ].filter(Boolean).join("\n");
 
@@ -124,7 +126,7 @@ function BrowserTile({ profile, isMaster, mirrorEnabled, onMasterMessage, shared
       <CompatWebView
         ref={ref}
         uri={sharedUrl}
-        userAgent={profile.fingerprint.userAgent}
+        userAgent={settings.fingerprintEnabled ? profile.fingerprint.userAgent : undefined}
         injectedJavaScriptBeforeContentLoaded={injected}
         javaScriptEnabled={profile.javascriptEnabled}
         domStorageEnabled
