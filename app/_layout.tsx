@@ -16,6 +16,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ProfileProvider } from "@/context/ProfileContext";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
+import { SettingsProvider } from "@/context/SettingsContext";
 import C from "@/constants/colors";
 
 SplashScreen.preventAutoHideAsync();
@@ -105,14 +106,16 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ErrorBoundary>
           <AuthProvider>
-            <ProfileProvider>
-              <KeyboardProvider>
-                <StatusBar style="light" backgroundColor={C.bg} />
-                <AuthGate>
-                  <RootLayoutNav />
-                </AuthGate>
-              </KeyboardProvider>
-            </ProfileProvider>
+            <SettingsProvider>
+              <ProfileProvider>
+                <KeyboardProvider>
+                  <StatusBar style="light" backgroundColor={C.bg} />
+                  <AuthGate>
+                    <RootLayoutNav />
+                  </AuthGate>
+                </KeyboardProvider>
+              </ProfileProvider>
+            </SettingsProvider>
           </AuthProvider>
         </ErrorBoundary>
       </SafeAreaProvider>
