@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "Browser Profile Manager"
+version = "1.0.0"
+id = "artifacts/browser-profiles"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+name = "expo"
+paths = [ "/" ]
+localPort = 18693
+
+[services.development]
+run = "pnpm --filter @workspace/browser-profiles run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/browser-profiles", "run", "build" ]
+run = [ "pnpm", "--filter", "@workspace/browser-profiles", "run", "serve" ]
+
+[services.env]
+PORT = "18693"
+BASE_PATH = "/"
