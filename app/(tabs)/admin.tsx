@@ -1,11 +1,11 @@
 import { Feather } from "@expo/vector-icons";
-import * as Clipboard from "expo-clipboard";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
   Pressable,
   RefreshControl,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -117,9 +117,11 @@ export default function AdminScreen() {
   }
 
   async function copyKey(key: string) {
-    await Clipboard.setStringAsync(key);
-    setCopiedKey(key);
-    setTimeout(() => setCopiedKey(""), 2000);
+    try {
+      await Share.share({ message: key, title: "License Key" });
+      setCopiedKey(key);
+      setTimeout(() => setCopiedKey(""), 3000);
+    } catch {}
   }
 
   if (!user?.isAdmin) {
