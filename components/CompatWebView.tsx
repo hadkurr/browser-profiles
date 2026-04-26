@@ -14,6 +14,9 @@ interface Props {
   injectedJavaScriptBeforeContentLoaded?: string;
   javaScriptEnabled?: boolean;
   domStorageEnabled?: boolean;
+  sharedCookiesEnabled?: boolean;
+  thirdPartyCookiesEnabled?: boolean;
+  cacheEnabled?: boolean;
   onLoadStart?: () => void;
   onLoadEnd?: () => void;
   onError?: (error: string) => void;
@@ -35,6 +38,9 @@ const CompatWebView = forwardRef<WebViewRef, Props>(function CompatWebView(props
     injectedJavaScriptBeforeContentLoaded,
     javaScriptEnabled = true,
     domStorageEnabled = true,
+    sharedCookiesEnabled = false,
+    thirdPartyCookiesEnabled = false,
+    cacheEnabled = true,
     onLoadStart,
     onLoadEnd,
     onError,
@@ -94,8 +100,9 @@ const CompatWebView = forwardRef<WebViewRef, Props>(function CompatWebView(props
       injectedJavaScriptBeforeContentLoaded={injectedJavaScriptBeforeContentLoaded}
       javaScriptEnabled={javaScriptEnabled}
       domStorageEnabled={domStorageEnabled}
-      sharedCookiesEnabled={false}
-      thirdPartyCookiesEnabled={false}
+      sharedCookiesEnabled={sharedCookiesEnabled}
+      thirdPartyCookiesEnabled={thirdPartyCookiesEnabled}
+      cacheEnabled={cacheEnabled}
       incognito={false}
       onLoadStart={onLoadStart}
       onLoadEnd={onLoadEnd}
