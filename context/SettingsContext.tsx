@@ -47,8 +47,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
+const DEFAULT_VALUE: SettingsContextValue = {
+  settings: DEFAULT,
+  isLoading: false,
+  setSetting: async () => {},
+};
+
 export function useSettings(): SettingsContextValue {
   const ctx = useContext(SettingsContext);
-  if (!ctx) throw new Error("useSettings must be used within SettingsProvider");
-  return ctx;
+  return ctx ?? DEFAULT_VALUE;
 }
