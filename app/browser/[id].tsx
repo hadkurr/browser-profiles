@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import CompatWebView, { WebViewRef } from "@/components/CompatWebView";
 import C from "@/constants/colors";
 import { useProfiles } from "@/context/ProfileContext";
+import { useSettings } from "@/context/SettingsContext";
 import { buildFingerprintJS } from "@/hooks/useFingerprintJS";
 import { useProfileSession } from "@/hooks/useProfileSession";
 import {
@@ -39,6 +40,7 @@ export default function BrowserScreen() {
 
   const profile = profiles.find((p) => p.id === id);
   const session = useProfileSession(id ?? "");
+  const { settings } = useSettings();
   const wvRef = useRef<WebViewRef>(null);
 
   const [urlInput, setUrlInput] = useState(HOME_URL);
@@ -155,9 +157,9 @@ export default function BrowserScreen() {
   }
 
   const injected = [
-    session.buildInjectJS(),
-    buildFingerprintJS(profile.fingerprint),
-  ].join("\n");
+    settings.storageIsolationEnabled ? session.buildInjectJS() : "",
+    settings.fingerprintEnabled ? buildFingerprintJS(profile.fingerprint) : "",
+  ].filter(Boolean).join("\n");
 
   return (
     <View style={[s.container, { paddingTop: insets.top }]}>
@@ -229,7 +231,7 @@ export default function BrowserScreen() {
         <CompatWebView
           ref={wvRef}
           uri={currentUrl}
-          userAgent={profile.fingerprint.userAgent}
+          userAgent={settings.fingerprintEnabled ? profile.fingerprint.userAgent : undefined}
           injectedJavaScriptBeforeContentLoaded={injected}
           javaScriptEnabled={profile.javascriptEnabled}
           domStorageEnabled={true}
